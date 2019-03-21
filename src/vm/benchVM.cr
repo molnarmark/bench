@@ -1,0 +1,2 @@
+module Bench::VM
+end

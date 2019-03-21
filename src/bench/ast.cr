@@ -1,4 +1,4 @@
-alias TokenValue = Bool | Int64 | Float64 | String | BinaryExpression
+alias BenchASTValue = Bool | Int64 | Float64 | String | BinaryExpression | BenchArray
 
 OPERATOR_PRECEDENCE = {
   "="  => 1,
@@ -21,22 +21,42 @@ abstract class BenchASTNode
 end
 
 class VariableDeclaration < BenchASTNode
-  def initialize(@name : String, @value : TokenValue)
+  def initialize(@name : String, @value : BenchASTValue)
   end
 end
 
-class FormDeclaration < BenchASTNode
+class FunctionDeclaration < BenchASTNode
   def initialize(@name : String, @body : Array(BenchASTNode))
   end
 end
 
-class RetStatement < BenchASTNode
+class ReturnStatement < BenchASTNode
   def initialize(@value : String)
   end
 end
 
 class BinaryExpression < BenchASTNode
   def initialize(@infix : String)
+  end
+end
+
+class BenchArray < BenchASTNode
+  def initialize(@values : Array(BenchASTValue))
+  end
+end
+
+class FunctionCall < BenchASTNode
+  def initialize(@name : String, @args : Array(Argument))
+  end
+end
+
+class Argument < BenchASTNode
+  def initialize(@value : String, @type : Symbol)
+  end
+end
+
+class ForLoop < BenchASTNode
+  def initialize(@variable : String, @target : BenchArray, @body : Array(BenchASTNode))
   end
 end
 

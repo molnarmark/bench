@@ -1,7 +1,7 @@
 module Bench
   BENCH_OPERATORS    = ['=', '+', '<', '-', '>']
-  BENCH_PUNCTUATIONS = ['(', ')', '{', '}', ';', ':']
-  BENCH_KEYWORDS     = ["form", "class", "for", "if", "ret", "init", "let"]
+  BENCH_PUNCTUATIONS = ['(', ')', '{', '}', ';', ':', '[', ']', ',']
+  BENCH_KEYWORDS     = ["fn", "class", "for", "in", "if", "return", "init", "let"]
 
   class Lexer
     @input : String

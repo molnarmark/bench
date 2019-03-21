@@ -4,96 +4,199 @@ module Bench
       @current_index = -1
     end
 
-    def lookahead
+    def parse
+      pp parse_top_level
+    end
+
+    private def lookahead
       next_index = @current_index + 1
       @tokens[next_index]
     end
 
-    def current
-      @tokens[@current_index]
-    end
-
-    def is_eof
+    private def is_eof
       lookahead().tokenType == :EOF
     end
 
-    def get_next
+    private def get_next
       @current_index += 1
       @tokens[@current_index]
     end
 
-    def parse
-      parse_top_level
-    end
-
-    def parse_top_level
+    private def parse_top_level
       top_level = TopLevel.new
 
       while !is_eof()
-        parsed = parse_anything
+        parsed = parse_anything.as(BenchASTNode)
         top_level.push parsed if parsed
       end
+
+      top_level
     end
 
+    # TODO write a separate method for this
     def parse_anything
       next_token = lookahead()
-      if next_token.tokenType == :KEYWORD && next_token.value == "let"
-        parse_var_decl
-      elsif next_token.tokenType == :KEYWORD && next_token.value == "form"
-        pp parse_form
-      elsif next_token.tokenType == :KEYWORD && next_token.value == "ret"
-        pp parse_ret
+
+      if next_token.tokenType == :KEYWORD && next_token.value == "fn"
+        return parse_function
+      elsif next_token.tokenType == :KEYWORD && next_token.value == "let"
+        return parse_var_decl
+      elsif next_token.tokenType == :IDENTIFIER
+        return parse_var_assign
+      elsif next_token.tokenType == :KEYWORD && next_token.value == "return"
+        return parse_return
+      elsif next_token.tokenType == :KEYWORD && next_token.value == "for"
+        return parse_for
       end
+
+      nil
     end
 
-    def parse_form
-      expect(:KEYWORD, "form")
-      name = expect(:IDENTIFIER).value
-      expect(:PUNCTUATION, "(")
-      expect(:PUNCTUATION, ")")
-      expect(:OPERATOR, "->")
+    def parse_body
+      next_token = lookahead()
+      if next_token.tokenType == :KEYWORD && next_token.value == "fn"
+        raise Exception.new("Cant declare a function inside a function/loop")
+      elsif next_token.tokenType == :KEYWORD && next_token.value == "let"
+        return parse_var_decl
+      elsif next_token.tokenType == :IDENTIFIER
+        return parse_var_assign
+      elsif next_token.tokenType == :KEYWORD && next_token.value == "return"
+        return parse_return
+      elsif next_token.tokenType == :KEYWORD && next_token.value == "for"
+        return parse_for
+      end
+
+      nil
+    end
+
+    private def parse_for
+      expect(:KEYWORD, "for")
+      variable = expect(:IDENTIFIER).value
+      expect(:KEYWORD, "in")
+      lookahead_token = lookahead()
+      target = parse_array
       expect(:PUNCTUATION, "{")
 
-      body = Array(BenchASTNode).new
+      body = [] of BenchASTNode
 
       # Parse the body until the closing }
       while lookahead().value != "}"
-        parsed = parse_anything()
-        body << parsed if parsed
+        parsed = parse_body()
+        body << parsed.as(BenchASTNode) if parsed
+      end
+
+      expect(:PUNCTUATION, "}")
+      ForLoop.new(variable, target, body)
+    end
+
+    private def parse_function
+      expect(:KEYWORD, "fn")
+      name = expect(:IDENTIFIER).value
+      expect(:PUNCTUATION, "(")
+      expect(:PUNCTUATION, ")")
+      expect(:PUNCTUATION, "{")
+
+      body = [] of BenchASTNode
+
+      # Parse the body until the closing }
+      while lookahead().value != "}"
+        parsed = parse_body()
+        body << parsed.as(BenchASTNode) if parsed
       end
 
       expect(:PUNCTUATION, "}")
 
-      FormDeclaration.new(name, body)
+      FunctionDeclaration.new(name, body)
     end
 
-    def parse_ret
-      expect(:KEYWORD, "ret")
+    private def parse_return
+      expect(:KEYWORD, "return")
       value = expect(:IDENTIFIER).value
       expect(:PUNCTUATION, ";")
-      RetStatement.new(value)
+      ReturnStatement.new(value)
     end
 
-    def parse_var_decl
-      expect(:KEYWORD, "let")
+    private def parse_function_call(name : String)
+      expect(:PUNCTUATION, "(")
+      args = [] of Argument
+      if lookahead().value != ")"
+        args = parse_args
+      else
+        expect(:PUNCTUATION, ")")
+      end
+      expect(:PUNCTUATION, ";")
+
+      FunctionCall.new(name, args)
+    end
+
+    private def parse_args
+      args = [] of Argument
+      while lookahead().value != ")"
+        token = get_next
+        args << Argument.new(token.value, token.tokenType) if token.tokenType != :PUNCTUATION
+      end
+
+      # Skip the closing )
+      get_next
+      args
+    end
+
+    # TODO add operators to variable assignment
+    private def parse_var_assign
       name = expect(:IDENTIFIER).value
+      if lookahead().value == "("
+        return parse_function_call(name)
+      end
       expect(:OPERATOR, "=")
-      value = parse_expression().as(TokenValue)
+      value = parse_expression().as(BenchASTValue)
       expect(:PUNCTUATION, ";")
       VariableDeclaration.new(name, value)
     end
 
-    def parse_expression
+    private def parse_var_decl
+      expect(:KEYWORD, "let")
+      name = expect(:IDENTIFIER).value
+      expect(:OPERATOR, "=")
+      value = parse_expression().as(BenchASTValue)
+      expect(:PUNCTUATION, ";")
+      VariableDeclaration.new(name, value)
+    end
+
+    private def parse_array
+      values = [] of BenchASTValue
+      expect(:PUNCTUATION, "[")
+      while lookahead().value != "]"
+        token = get_next
+        if token.tokenType == :NUMBER || token.tokenType == :STRING || token.tokenType == :IDENTIFIER
+          values << token.value
+        end
+      end
+
+      # Skip the closing ]
+      get_next
+
+      BenchArray.new(values)
+    end
+
+    private def parse_expression
       lookahead_token = lookahead()
       if lookahead_token.tokenType == :NUMBER
         parse_binary
+      elsif lookahead_token.tokenType == :STRING
+        get_next
+        lookahead_token.value
+      elsif lookahead_token.tokenType == :IDENTIFIER
+        get_next
+        lookahead_token.value
+      elsif lookahead_token.tokenType == :PUNCTUATION && lookahead_token.value == "["
+        parse_array
       end
     end
 
-    def parse_binary
+    private def parse_binary
       next_token = get_next
-      binary_op_tokens = Array(Token).new
-      op_stack = Array(String).new
+      binary_op_tokens = [] of Token
+      op_stack = [] of String
 
       while next_token.value != ";"
         binary_op_tokens << next_token
@@ -120,7 +223,7 @@ module Bench
       BinaryExpression.new(infix)
     end
 
-    def expect(tokenType : Symbol)
+    private def expect(tokenType : Symbol)
       lookahead_token = lookahead()
       if lookahead_token.tokenType == tokenType
         get_next
@@ -129,7 +232,7 @@ module Bench
       end
     end
 
-    def expect(tokenType : Symbol, tokenValue : String)
+    private def expect(tokenType : Symbol, tokenValue : String)
       lookahead_token = lookahead()
       if lookahead_token.tokenType == tokenType && lookahead_token.value == tokenValue
         get_next
@@ -138,7 +241,7 @@ module Bench
       end
     end
 
-    def expect_any(tokenTypes : Array(Symbol))
+    private def expect_any(tokenTypes : Array(Symbol))
       found_expected = nil
       tokenTypes.each do |tokenType|
         begin
@@ -154,7 +257,7 @@ module Bench
       end
     end
 
-    def is_operator(char : String)
+    private def is_operator(char : String)
       begin
         OPERATOR_PRECEDENCE[char]
         true
