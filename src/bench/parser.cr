@@ -62,8 +62,6 @@ module Bench
         return parse_var_assign
       elsif next_token.tokenType == :KEYWORD && next_token.value == "return"
         return parse_return
-      elsif next_token.tokenType == :KEYWORD && next_token.value == "for"
-        return parse_for
       end
 
       nil
@@ -175,7 +173,7 @@ module Bench
       # Skip the closing ]
       get_next
 
-      BenchArray.new(values)
+      ArrayLiteral.new(values)
     end
 
     private def parse_expression

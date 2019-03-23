@@ -1,4 +1,4 @@
-alias BenchASTValue = Bool | Int64 | Float64 | String | BinaryExpression | BenchArray
+alias BenchASTValue = Bool | Int64 | Float64 | String | BinaryExpression | ArrayLiteral
 
 OPERATOR_PRECEDENCE = {
   "="  => 1,
@@ -40,7 +40,7 @@ class BinaryExpression < BenchASTNode
   end
 end
 
-class BenchArray < BenchASTNode
+class ArrayLiteral < BenchASTNode
   def initialize(@values : Array(BenchASTValue))
   end
 end
@@ -56,7 +56,7 @@ class Argument < BenchASTNode
 end
 
 class ForLoop < BenchASTNode
-  def initialize(@variable : String, @target : BenchArray, @body : Array(BenchASTNode))
+  def initialize(@variable : String, @target : ArrayLiteral, @body : Array(BenchASTNode))
   end
 end
 

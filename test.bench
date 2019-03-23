@@ -3,6 +3,7 @@ let myAge = 22;
 
 fn sayName() {
   let testArray = [1, 2, 3, "Doe"];
+  let something = a < 1;
   println(myName);
   return true;
 }
