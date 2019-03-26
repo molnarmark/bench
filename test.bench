@@ -1,9 +1,24 @@
 let myName = "Mark";
-let myAge = 22;
 
 fn sayName() {
   let testArray = [1, 2, 3, "Doe"];
-  let something = a < 1;
+  let something = "Asd";
   println(myName);
   return true;
 }
+
+#<TopLevel:0x7f0470cc4be0
+ @name="program",
+ @program=
+  [#<VariableDeclaration:0x7f0470ca1ea0 @name="myName", @value="Mark">,
+   #<FunctionDeclaration:0x7f0470cc4a40
+    @body=
+     [#<VariableDeclaration:0x7f0470ca1e70
+       @name="testArray",
+       @value=#<ArrayLiteral:0x7f0470cc4b40 @values=["1", "2", "3", "Doe"]>>,
+      #<VariableDeclaration:0x7f0470ca1e40 @name="something", @value="Asd">,
+      #<FunctionCall:0x7f0470cc4a80
+       @args=[#<Argument:0x7f0470cc4ac0 @type=:IDENTIFIER, @value="myName">],
+       @name="println">,
+      #<ReturnStatement:0x7f0470cc4a60 @value="true">],
+    @name="sayName">]>

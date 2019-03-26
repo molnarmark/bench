@@ -9,4 +9,7 @@ The Bench Programming Language.
 - [ ] Parser for maps
 - [ ] Parser for structs
 - [ ] Parser for lambdas
+- [ ] Increment & decrement operators
+- [ ] Improve syntax errors
 - [ ] Implement targets (mainly lua for now)
+- [ ] Implement argument parsing for functions

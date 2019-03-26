@@ -1,5 +1,5 @@
 module Bench
-  BENCH_OPERATORS    = ['=', '+', '<', '-', '>']
+  BENCH_OPERATORS    = ['=', '+', '<', '-', '>', '!', '&']
   BENCH_PUNCTUATIONS = ['(', ')', '{', '}', ';', ':', '[', ']', ',']
   BENCH_KEYWORDS     = ["fn", "class", "for", "in", "if", "return", "init", "let"]
 

@@ -5,7 +5,7 @@ module Bench
     end
 
     def parse
-      pp parse_top_level
+      parse_top_level
     end
 
     private def lookahead
@@ -148,7 +148,7 @@ module Bench
       expect(:OPERATOR, "=")
       value = parse_expression().as(BenchASTValue)
       expect(:PUNCTUATION, ";")
-      VariableDeclaration.new(name, value)
+      VariableAssignment.new(name, value)
     end
 
     private def parse_var_decl
@@ -195,30 +195,32 @@ module Bench
       next_token = get_next
       binary_op_tokens = [] of Token
       op_stack = [] of String
+      raw = ""
 
       while next_token.value != ";"
         binary_op_tokens << next_token
+        raw = raw + next_token.value
         next_token = get_next
       end
 
-      infix = ""
+      postfix = ""
       binary_op_tokens.each do |token|
         if is_operator(token.value)
           while token.value != "^" && op_stack.size > 0 && (OPERATOR_PRECEDENCE[token.value] <= OPERATOR_PRECEDENCE[op_stack[op_stack.size - 1]])
-            infix += op_stack.pop + " "
+            postfix += op_stack.pop + " "
           end
 
           op_stack << token.value
         else
-          infix += token.value + " "
+          postfix += token.value + " "
         end
       end
       while op_stack.size > 0
-        infix += op_stack.pop
+        postfix += op_stack.pop
       end
 
       @current_index -= 1
-      BinaryExpression.new(infix)
+      BinaryExpression.new(postfix, raw)
     end
 
     private def expect(tokenType : Symbol)

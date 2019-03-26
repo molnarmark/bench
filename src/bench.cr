@@ -1,12 +1,14 @@
-# TODO: Write documentation for `Bench`
 require "./bench/*"
+require "./targets/*"
 
 module Bench
   VERSION = "0.1.0"
-  # pp "function".as(Symbol)
+
   lexer = Bench::Lexer.new(File.read("test.bench"))
   lexer.lex
 
   parser = Bench::Parser.new(lexer.tokens)
-  parser.parse
+  top_level = parser.parse
+  pp top_level
+  # lua_target = Bench::Targets::Lua.new(top_level)
 end
